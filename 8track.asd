@@ -13,6 +13,7 @@
 			   :serapeum
 			   :quri)
   :components ((:file "package")
+			   (:file "product")
 			   (:file "amazon")
 			   (:file "notifications")
 			   (:file "telegram")

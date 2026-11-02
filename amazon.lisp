@@ -2,7 +2,6 @@
 
 (in-package #:dev.shft.8track)
 
-(defparameter +not-available-text+ " No disponible. ")
 (defparameter +base-amazon-product-uri+ (quri:uri "https://www.amazon.es/dp/"))
 (defparameter +common-user-agent+ "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
 
@@ -11,10 +10,17 @@
 (deftype amazon-asin ()
   '(string))
 
-(deftype amazon-product-availability ()
-  '(member
-	:available
-	:unavailable))
+(defclass amazon-product (product) ())
+
+(defclass available-amazon-product (available-product amazon-product) ())
+
+(defgeneric product-available (product))
+
+(defmethod product-available ((product amazon-product))
+  nil)
+
+(defmethod product-available ((product available-amazon-product))
+  t)
 
 (-> amazon-product-url (amazon-asin) quri:uri)
 (defun amazon-product-url (asin)
@@ -31,20 +37,43 @@
   "Checks the availability of a product based on an lquery DOM"
   (dom-element-exists (lquery:$ dom "#outOfStockBuyBox_feature_div")))
 
+(-> amazon-product-name (vector) string)
+(defun amazon-product-name (dom)
+  "Gets the product name of a product based on an lquery DOM"
+  (string-trim " " (lquery-funcs:text (lquery:$1 dom "#productTitle"))))
+
+(-> amazon-product-price (vector) integer)
+(defun amazon-product-price (dom)
+  "Gets the price of a product in cents based on an lquery DOM"
+  (let ((whole (parse-integer (string-trim "," (lquery-funcs:text (lquery:$1 dom ".a-price-whole")))))
+		(fraction (parse-integer (lquery-funcs:text (lquery:$1 dom ".a-price-fraction")))))
+	(+ (* 100 whole) fraction)))
+
 ;; TODO Test if this actually works
 (-> amazon-blocked-request-p (vector) boolean)
 (defun amazon-blocked-request-p (dom)
   "Checks if the request was blocked on the lquery DOM"
   (dom-element-exists (lquery:$ dom "#productTitle")))
 
-(-> check-availability (amazon-asin) amazon-product-availability)
-(defun check-availability (asin)
+(-> product-request (amazon-asin) vector)
+(defun product-request (asin)
   (let* ((url (amazon-product-url asin))
 		 (dom (lquery:$ (initialize (dex:get url
 											 :headers `(("User-Agent" . ,+common-user-agent+)))))))
 	(when (amazon-blocked-request-p dom)
-	  (error "Request was blocked by amazon. Try again"))
+	  (error "Request was blocked by amazon. Try again later"))
+	dom))
+
+(-> product-data (amazon-asin) (or amazon-product available-amazon-product))
+(defun product-data (asin)
+  (let* ((dom (product-request asin))
+		 (name (amazon-product-name dom)))
 	(if (amazon-product-available-p dom)
-		:available
-		:unavailable)))
+		(make-instance 'available-amazon-product
+					   :id asin
+					   :name name
+					   :price (amazon-product-price dom))
+		(make-instance 'amazon-product
+					   :id asin
+					   :name name))))
 
