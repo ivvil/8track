@@ -14,4 +14,6 @@
 			   :quri)
   :components ((:file "package")
 			   (:file "amazon")
+			   (:file "notifications")
+			   (:file "telegram")
                (:file "8track")))

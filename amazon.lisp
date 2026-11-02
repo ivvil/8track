@@ -6,6 +6,8 @@
 (defparameter +base-amazon-product-uri+ (quri:uri "https://www.amazon.es/dp/"))
 (defparameter +common-user-agent+ "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
 
+(defparameter *amazon-default-backoff-hours* 1)
+
 (deftype amazon-asin ()
   '(string))
 
