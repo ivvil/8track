@@ -9,6 +9,9 @@
   :depends-on (:dexador
 			   :plump
 			   :lquery
-			   :lparallel)
+			   :lparallel
+			   :serapeum
+			   :quri)
   :components ((:file "package")
+			   (:file "amazon")
                (:file "8track")))
