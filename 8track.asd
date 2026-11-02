@@ -11,7 +11,8 @@
 			   :lquery
 			   :lparallel
 			   :serapeum
-			   :quri)
+			   :quri
+			   :local-time)
   :components ((:file "package")
 			   (:file "product")
 			   (:file "amazon")

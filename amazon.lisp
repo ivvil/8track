@@ -5,10 +5,24 @@
 (defparameter +base-amazon-product-uri+ (quri:uri "https://www.amazon.es/dp/"))
 (defparameter +common-user-agent+ "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
 
-(defparameter *amazon-default-backoff-hours* 1)
+(defparameter *amazon-default-backoff-time* 1800)
 
 (deftype amazon-asin ()
   '(string))
+
+(define-condition amazon-blocked-request (error)
+  ((request-time
+	 :initform (local-time:now)
+	 :reader request-time)
+   (product-asin
+	:initarg asin
+	:reader product-asin
+	:initform (error "An asin is required")))
+  (:report (lambda (condition stream)
+			 (format stream
+					 "Product request blocked by amazon. Usually happens because you ran too many requests. Request time: ~a Product: ~a"
+					 (request-time condition)
+					 (product-asin condition)))))
 
 (defclass amazon-product (product) ())
 
@@ -55,14 +69,26 @@
   "Checks if the request was blocked on the lquery DOM"
   (dom-element-exists (lquery:$ dom "#productTitle")))
 
+(defun prompt-new-value (prompt)
+  (format *query-io* prompt)
+  (force-output *query-io*)
+  (list (read *query-io*)))
+
 (-> product-request (amazon-asin) vector)
 (defun product-request (asin)
-  (let* ((url (amazon-product-url asin))
-		 (dom (lquery:$ (initialize (dex:get url
-											 :headers `(("User-Agent" . ,+common-user-agent+)))))))
-	(when (amazon-blocked-request-p dom)
-	  (error "Request was blocked by amazon. Try again later"))
-	dom))
+  (restart-case
+	  (let* ((url (amazon-product-url asin))
+			 (dom (lquery:$ (initialize (dex:get url
+												 :headers `(("User-Agent" . ,+common-user-agent+)))))))
+		(when (amazon-blocked-request-p dom)
+		  (error 'amazon-blocked-request :asin asin))
+		dom)
+	(wait-and-rerun-request (time-in-seconds)
+	  :report "Enter time to wait"
+	  :interactive (lambda () (prompt-new-value "Please enter time to wait in seconds: "))
+
+	  (sleep time-in-seconds)
+	  (product-request asin))))
 
 (-> product-data (amazon-asin) (or amazon-product available-amazon-product))
 (defun product-data (asin)
