@@ -1,6 +1,6 @@
 ;;;; product.lisp
 
-(in-package #:dev.shfr.8track)
+(in-package #:dev.shft.8track)
 
 (defclass product ()
   ((id

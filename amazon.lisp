@@ -5,7 +5,7 @@
 (defparameter +base-amazon-product-uri+ (quri:uri "https://www.amazon.es/dp/"))
 (defparameter +common-user-agent+ "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
 
-(defparameter *amazon-default-backoff-time* 1800)
+(defparameter *amazon-default-backoff-time* 120)
 
 (deftype amazon-asin ()
   '(string))
@@ -77,17 +77,24 @@
 (-> product-request (amazon-asin) vector)
 (defun product-request (asin)
   (restart-case
-	  (let* ((url (amazon-product-url asin))
-			 (dom (lquery:$ (initialize (dex:get url
-												 :headers `(("User-Agent" . ,+common-user-agent+)))))))
-		(when (amazon-blocked-request-p dom)
-		  (error 'amazon-blocked-request :asin asin))
-		dom)
+	  (return-from product-request
+		(let* ((url (amazon-product-url asin))
+			   (dom (lquery:$ (initialize (dex:get url
+												   :headers `(("User-Agent" . ,+common-user-agent+)))))))
+		  (when (amazon-blocked-request-p dom)
+			(error 'amazon-blocked-request :asin asin))
+		  dom))
 	(wait-and-rerun-request (time-in-seconds)
 	  :report "Enter time to wait"
 	  :interactive (lambda () (prompt-new-value "Please enter time to wait in seconds: "))
 
 	  (sleep time-in-seconds)
+	  (product-request asin))
+
+	(wait-default-and-rerun-request ()
+	  :report "Will wait *amazon-default-backoff-time* seconds and rerun the request"
+
+	  (sleep *amazon-default-backoff-time*)
 	  (product-request asin))))
 
 (-> product-data (amazon-asin) (or amazon-product available-amazon-product))
