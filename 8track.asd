@@ -4,7 +4,7 @@
   :description "An Amazon product tracker that notifies you when a product is in stock"
   :author "Iván Villagrasa <ivvil412@gmail.com>"
   :license  "GPL-3"
-  :version "0.0.1"
+  :version "1.0.0"
   :serial t
   :depends-on (:dexador
 			   :plump
