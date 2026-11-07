@@ -30,5 +30,9 @@
 			 (send-product-update channel product)
 			 (sleep interval))))
 
-(defun main (args)
-  )
+(defun main ()
+  (let* ((telegram-token (or (uiop:getenv "EIGHTTRACK_TELEGRAM_TOKEN") (error "Telegram token not found, use 8TRACK_TELEGRAM_TOKEN")))
+		 (telegram-chat (or (uiop:getenv "EIGHTTRACK_TELEGRAM_CHATID") (error "Telegram User Id not found, use 8TRACK_TELEGRAM_CHATID")))
+		 (telegram-channel (make-instance 'telegram-channel :chat-id telegram-chat :token telegram-token))
+		 (amazon-asin (or (uiop:getenv "EIGHTTRACK_AMAZON_ASIN") (error "Amazon product ASIN not found, use 8TRACK_AMAZON_ASIN"))))
+	(watch amazon-asin telegram-channel)))

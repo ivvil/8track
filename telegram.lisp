@@ -2,9 +2,9 @@
 
 (in-package #:dev.shft.8track)
 
-(defparameter +telegram-api-url+ (quri:uri "https://api.telegram.org/"))
+(defparameter +telegram-api-url+ (quri:uri "https://api.telegram.org"))
 
-(defclass telegram-channel (notification-provider)
+(defclass telegram-channel (notification-channel)
   ((token
 	:initarg :token
 	:reader token
@@ -15,11 +15,8 @@
 	:initform (error "A telegram chat id is required"))))
 
 (defmethod api-url ((channel telegram-channel))
-  (quri:merge-uris (concatenate 'string
-								"bot"
-								(token channel)
-								"/")
-				   +telegram-api-url+))
+  (quri:make-uri :defaults +telegram-api-url+
+                 :path (format nil "/bot~a/" (token channel))))
 
 (defmethod send ((channel telegram-channel) message)
   (dex:post (quri:merge-uris

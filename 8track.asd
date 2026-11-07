@@ -18,4 +18,7 @@
 			   (:file "amazon")
 			   (:file "notifications")
 			   (:file "telegram")
-               (:file "8track")))
+               (:file "8track"))
+  :build-operation "program-op"
+  :build-pathname "8track"
+  :entry-point "dev.shft.8track:main")

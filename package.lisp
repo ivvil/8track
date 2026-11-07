@@ -1,4 +1,5 @@
 ;;;; package.lisp
 
 (defpackage #:dev.shft.8track
-  (:use #:cl #:serapeum))
+  (:use #:cl #:serapeum)
+  (:export :main))
